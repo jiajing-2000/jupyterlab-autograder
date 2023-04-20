@@ -63,7 +63,7 @@ const extension: JupyterFrontEndPlugin<void> = {
       const resultTextarea = document.createElement('textarea');
       resultTextarea.rows = 20;
       resultTextarea.cols = 80;
-      resultTextarea.value = 'Grade: ' + result.grade
+      resultTextarea.value = "0.5";
       resultTextarea.readOnly = true;
       resultsPanelcontext.node.appendChild(resultTextarea);
 
