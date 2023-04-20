@@ -4,8 +4,13 @@ import {
 } from '@jupyterlab/application';
 import { Widget } from '@lumino/widgets';
 import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
-// import { IMainMenu } from '@jupyterlab/mainmenu';
-// import { DocumentRegistry } from '@jupyterlab/docregistry';
+
+interface AutograderResponse {
+  message: string;
+  result: string;
+  correctness: number;
+};
+
 
 const extension: JupyterFrontEndPlugin<void> = {
   id: 'autograder-extension',
@@ -48,26 +53,30 @@ const extension: JupyterFrontEndPlugin<void> = {
           'Content-Type': 'application/json'
         }
       });
+      if (!response.ok) {
+        const data = await response.json();
+        if (data.error) {
+          console.error(data.error.message);
+        } else {
+          console.error('Unknown error');
+        }
+      } else {
+        const result = await response.json() as AutograderResponse;
+        console.log(result); 
 
-      // Parse the response JSON
-      // result is in the format { grade: 0.5, message: 'Test 1 passed\nTest 2 failed' }
-      const result = await response.json();
+        // Display the results of the tests in a new panel
+        const resultsPanelcontext = new Widget();
+        const resultsPanel = new MainAreaWidget({ content: resultsPanelcontext });
 
-      // Display the results of the tests in a new panel
-      const resultsPanelcontext = new Widget();
-      const resultsPanel = new MainAreaWidget({ content: resultsPanelcontext });
+        resultsPanelcontext.id = 'results-panel';
+        resultsPanel.title.label = 'Results';
+        resultsPanel.title.closable = true;
+        const resultParagraph = document.createElement('p');
+        resultParagraph.innerText = result.message;
+        resultsPanelcontext.node.appendChild(resultParagraph);
 
-      resultsPanelcontext.id = 'results-panel';
-      resultsPanel.title.label = 'Results';
-      resultsPanel.title.closable = true;
-      const resultTextarea = document.createElement('textarea');
-      resultTextarea.rows = 20;
-      resultTextarea.cols = 80;
-      resultTextarea.value = "0.5";
-      resultTextarea.readOnly = true;
-      resultsPanelcontext.node.appendChild(resultTextarea);
-
-      app.shell.add(resultsPanel, 'main', { rank: 100 });     
+        app.shell.add(resultsPanel, 'main', { rank: 100 });  
+      }
     };
 
     // Create a button to clear the code input form
