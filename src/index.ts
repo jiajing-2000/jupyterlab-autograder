@@ -44,6 +44,16 @@ const extension: JupyterFrontEndPlugin<void> = {
     submitButton.onclick = async () => {
       // Get the code from the input form
       const code = codeTextarea.value;
+      // Display the results of the tests in a new panel
+      const resultsPanelcontext = new Widget();
+      const resultsPanel = new MainAreaWidget({ content: resultsPanelcontext });
+
+      resultsPanelcontext.id = 'results-panel';
+      resultsPanel.title.label = 'Results';
+      resultsPanel.title.closable = true;
+      let resultParagraph = document.createElement('p');
+      
+      resultsPanelcontext.node.appendChild(resultParagraph);
 
       // Call the autograding service to run the tests
       const response = await fetch('http://localhost:8000/autograder/run', {
@@ -56,27 +66,15 @@ const extension: JupyterFrontEndPlugin<void> = {
       if (!response.ok) {
         const data = await response.json();
         if (data.error) {
-          console.error(data.error.message);
+          resultParagraph.innerText = data.error.message;
         } else {
-          console.error('Unknown error');
+          resultParagraph.innerText = response.statusText;
         }
       } else {
         const result = await response.json() as AutograderResponse;
-        console.log(result); 
-
-        // Display the results of the tests in a new panel
-        const resultsPanelcontext = new Widget();
-        const resultsPanel = new MainAreaWidget({ content: resultsPanelcontext });
-
-        resultsPanelcontext.id = 'results-panel';
-        resultsPanel.title.label = 'Results';
-        resultsPanel.title.closable = true;
-        const resultParagraph = document.createElement('p');
         resultParagraph.innerText = result.message;
-        resultsPanelcontext.node.appendChild(resultParagraph);
-
-        app.shell.add(resultsPanel, 'main', { rank: 100 });  
       }
+      app.shell.add(resultsPanel, 'main', { rank: 100 });  
     };
 
     // Create a button to clear the code input form
